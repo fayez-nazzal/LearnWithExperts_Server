@@ -12,7 +12,7 @@ public class User {
     private String field;
     private String b64Image;
     private User currentExpert;
-    private PrintWriter writer;
+    private final PrintWriter writer;
 
     public User getCurrentContact() {
         return currentExpert;
@@ -96,13 +96,34 @@ public class User {
         writer.println(msg);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        User user = (User) o;
+
+        if (id != user.id) return false;
+        if (!role.equals(user.role)) return false;
+        if (!name.equals(user.name)) return false;
+        if (!field.equals(user.field)) return false;
+        if (!b64Image.equals(user.b64Image)) return false;
+        if (!currentExpert.equals(user.currentExpert)) return false;
+        return writer.equals(user.writer);
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
     public static User findFromId(int id) {
-        System.out.println("finding user of id "+id);
-        for (User u:Main.onlineUsers) {
+        System.out.println("finding user of id " + id);
+        for (User u : Main.onlineUsers) {
             if (u.getId() == id) {
                 return u;
             } else {
-                System.out.println("no, it's "+u.getId());
+                System.out.println("no, it's " + u.getId());
             }
         }
         return null;

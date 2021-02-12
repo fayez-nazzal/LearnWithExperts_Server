@@ -9,7 +9,7 @@ import java.util.concurrent.Callable;
 
 // One ClientSession object =====> one user
 public class ClientSession implements Callable<Void> {
-    private Socket client;
+    private final Socket client;
     private User user;
     BufferedReader readClient;
     PrintWriter writeClient;
@@ -49,10 +49,12 @@ public class ClientSession implements Callable<Void> {
 
         // continue receiving messages from the user of this thread
         // also sends messages to other users
-        while (client.isConnected()) {
+        while (client.isConnected() || client.isClosed()) {
             System.out.println("waiting...");
+
             String s = readClient.readLine();
-            System.out.println("received "+s+" from user"+user.getId());
+
+            System.out.println("received " + s + " from user" + user.getId());
 
             if (s != null) {
                 String[] sInfo = s.split(";");
@@ -91,21 +93,28 @@ public class ClientSession implements Callable<Void> {
                 } else if (sInfo[0].equals("GET_ONLINE_USERS")) {
                     System.out.println("A request to get online users");
                     String onlineUsersStr = "";
-                    System.out.println("There's "+Main.onlineUsers.size()+" online users in main");
+                    System.out.println("There's " + Main.onlineUsers.size() + " online users in main");
                     for (User u : Main.onlineUsers) {
-                        onlineUsersStr += String.join(";FayezIbrahimNivin;", ""+u.getId(), u.getName(), u.getRole(), u.getField(), u.getB64Image());
-                        onlineUsersStr += ";";
+                        // A user doesn't have to see himself as online
+                        if (u.getId() != user.getId()) {
+                            onlineUsersStr += String.join(";FayezIbrahimNivin;", "" + u.getId(), u.getName(), u.getRole(), u.getField(), u.getB64Image());
+                            onlineUsersStr += ";user_seperator;";
+                        }
                     }
                     user.receiveMessage(onlineUsersStr);
                 }
+            } else {
+                System.out.println("client " + user.getId() + " disconnected");
+                break;
             }
         }
 
-        // This line is reached when the client is not connected
-        Main.onlineUsers.remove(client);
+        Main.onlineUsers.remove(user);
 
         return null;
     }
+
+
 }
 
 
