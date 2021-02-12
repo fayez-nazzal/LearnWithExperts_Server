@@ -43,9 +43,21 @@ public class ClientSession implements Callable<Void> {
         user = new User(name, role, field, b64Image, writeClient);
         System.out.println("defined user "+user.getId());
 
+        for (User u:Main.onlineUsers) {
+            u.receiveMessage("online");
+            u.receiveMessage(String.join(";FayezIbrahimNivin;", ""+user.getId(), user.getName(), user.getRole(), user.getField(), user.getImage()));
+        }
+
         Main.onlineUsers.add(user);
 
         user.receiveMessage(""+user.getId());
+
+        for (User oldUser:Main.onlineUsers) {
+            if (oldUser.getId() != user.getId()) {
+                user.receiveMessage("online");
+                user.receiveMessage(String.join(";FayezIbrahimNivin;", ""+oldUser.getId(), oldUser.getName(), oldUser.getRole(), oldUser.getField(), oldUser.getImage()));
+            }
+        }
 
         // continue receiving messages from the user of this thread
         // also sends messages to other users
@@ -59,49 +71,25 @@ public class ClientSession implements Callable<Void> {
             if (s != null) {
                 String[] sInfo = s.split(";");
 
-                if (sInfo[0].equals("change_field")) {
-                    user.setField(sInfo[1]);
-                } else if (sInfo[0].equals("connect")) {
-                    System.out.println("found a connect request");
-                    try {
-                        User u = User.findFromId(Integer.parseInt(sInfo[1]));
-                        System.out.println("connecting to user "+u.getId()+" from "+user.getId());
-                        if (u != null) {
-                            user.setCurrentContact(u);
-                            writeClient.println("ok");
-                        }                    else
-                            writeClient.println("failed");
+                if (sInfo[0].equals("message")) {
+                    User from = user;
+                    User to = User.findFromId(Integer.parseInt(sInfo[1]));
+                    String message = sInfo[2];
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    for (var i:sInfo)
+                        System.out.print(i+", ");
+                    System.out.println();
 
-                } else if (sInfo[0].equals("end")) {
-                    user.setCurrentContact(null);
-                    writeClient.println("ok");
-                } else if (sInfo[0].equals("message")) {
-                    System.out.println("found a message from user "+user.getId());
-                    User contact = user.getCurrentContact();
+                    System.out.println("found a message from user "+user.getName());
+                    System.out.println("The message is "+message);
 
-                    if (contact != null) {
-                        System.out.println("the message is to user "+contact.getId());
-                        contact.receiveMessage(sInfo[1]);
+                    if (to != null) {
+                        System.out.println("the message is to user "+to.getName());
+                        to.receiveMessage("message;"+from.getId()+";"+message);
                         System.out.println("message send");
                     } else {
                         System.out.println("didn't find contact");
                     }
-                } else if (sInfo[0].equals("GET_ONLINE_USERS")) {
-                    System.out.println("A request to get online users");
-                    String onlineUsersStr = "";
-                    System.out.println("There's " + Main.onlineUsers.size() + " online users in main");
-                    for (User u : Main.onlineUsers) {
-                        // A user doesn't have to see himself as online
-                        if (u.getId() != user.getId()) {
-                            onlineUsersStr += String.join(";FayezIbrahimNivin;", "" + u.getId(), u.getName(), u.getRole(), u.getField(), u.getB64Image());
-                            onlineUsersStr += ";user_seperator;";
-                        }
-                    }
-                    user.receiveMessage(onlineUsersStr);
                 }
             } else {
                 System.out.println("client " + user.getId() + " disconnected");
