@@ -93,11 +93,16 @@ public class ClientSession implements Callable<Void> {
                 }
             } else {
                 System.out.println("client " + user.getId() + " disconnected");
+                for (User u: Main.onlineUsers) {
+                    if (u.getId() != user.getId())
+                        u.receiveMessage(String.join(";FayezIbrahimNivin;", "offline", ""+user.getId() ));
+                }
                 break;
             }
         }
 
-        Main.onlineUsers.remove(user);
+        System.out.println("removing "+user.getId());
+        System.out.println(Main.onlineUsers.remove(user));
 
         return null;
     }
