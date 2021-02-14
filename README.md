@@ -1,4 +1,4 @@
-# learnWithExperts_Server
+# LearnWithExperts_Server
 Allows Novice people to learn from Experts by chatting, created as a university project for the Networks Programming course.
 
 
